@@ -1,0 +1,45 @@
+version: "3.8"
+services:
+  yarn-install:
+    extends:
+      file: ../../docker-compose.yml
+      service: yarn-install
+
+  frontend:
+    extends:
+      file: ../../docker-compose.yml
+      service: frontend
+
+  backend:
+    extends:
+      file: ../../docker-compose.yml
+      service: backend
+    networks:
+      tbnetwork:
+      default:
+
+  mongo:
+    extends:
+      file: ../../docker-compose.yml
+      service: mongo
+
+  vector-similarity-intent:
+    build: .
+    restart: unless-stopped
+    environment:
+      MODELNAME: "NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers"
+    networks:
+      tbnetwork:
+    volumes:
+      - .:/app
+
+networks:
+  tbnetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.99.0.0/16
+      driver: default
+
+volumes:
+  mongodb:
