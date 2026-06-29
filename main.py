@@ -1,11 +1,36 @@
-from fastapi import FastAPI
+import os
+
+from fastapi import FastAPI, Query
+from sentence_transformers import SentenceTransformer, SimilarityFunction
+from typing import Annotated
+
+modelname = 'NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers'
+
+if 'MODELNAME' in os.environ:
+    modelname = os.environ['MODELNAME']
+
+model = SentenceTransformer(modelname,
+                            similarity_fn_name=SimilarityFunction.COSINE)
 
 app = FastAPI()
 
 
 @app.get("/")
-async def get_intent():
-    return {"intent": None}
+async def get_intent(user_input: str, intent_options: Annotated[list[str] | None, Query()] = None):
+    sentences1 = [user_input]
+    sentences2 = intent_options
+
+    embeddings1 = model.encode(sentences1)
+    embeddings2 = model.encode(sentences2)
+
+    similarities = model.similarity(embeddings1, embeddings2)
+    closest = [None, 0.0]
+    for idx, sentence2 in enumerate(sentences2):
+        print(f" - {sentence2: <30}: {similarities[0][idx]:.4f}")
+        if similarities[0][idx] > closest[1]:
+            closest = [sentence2, similarities[0][idx]]
+
+    return {"intent": closest[0], "connector_label": closest[0]}
 
 # from sentence_transformers import SentenceTransformer, SimilarityFunction
 # sentences1 = ["Draagt de persoon een corrigerend ding gezichts?"]

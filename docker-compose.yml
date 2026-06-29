@@ -1,4 +1,4 @@
-version: "3.8"
+name: tilbot
 services:
   yarn-install:
     extends:
@@ -24,10 +24,14 @@ services:
       service: mongo
 
   vector-similarity-intent:
-    build: .
+    build:
+      context: .
+      args:
+        PORT: ${PORT}
     restart: unless-stopped
     environment:
       MODELNAME: "NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers"
+      PORT: 8081
     networks:
       tbnetwork:
     volumes:
