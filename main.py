@@ -22,7 +22,8 @@ async def get_intent(user_input: str, intent_options: Annotated[list[str] | None
 
     intent_options_decoded = []
     for io in intent_options:
-        intent_options_decoded.append(unquote(io))
+        if unquote(io) != "candidates":
+            intent_options_decoded.append(unquote(io))
 
     sentences2 = intent_options_decoded
 
@@ -31,12 +32,29 @@ async def get_intent(user_input: str, intent_options: Annotated[list[str] | None
 
     similarities = model.similarity(embeddings1, embeddings2)
     closest = [None, 0.0]
+    secondclosest = [None, 0.0]
+    thirdclosest = [None, 0.0]
+
     for idx, sentence2 in enumerate(sentences2):
         print(f" - {sentence2: <30}: {similarities[0][idx]:.4f}")
         if similarities[0][idx] > closest[1]:
+            thirdclosest = secondclosest
+            secondclosest = closest
             closest = [sentence2, similarities[0][idx]]
+        elif similarities[0][idx] > secondclosest[1]:
+            secondclosest = [sentence2, similarities[0][idx]]
+        elif similarities[0][idx] > thirdclosest[1]:
+            thirdclosest = [sentence2, similarities[0][idx]]
 
-    return {"intent": closest[0], "connector_label": closest[0]}
+    if closest[1] > 0.4:
+        if closest[1] - secondclosest[1] < 0.05:
+            if secondclosest[1] - thirdclosest[1] < 0.05:
+                return {"intent": "candidates", "connector_label": [closest[0], secondclosest[0], thirdclosest[0]]}
+            return {"intent": "candidates", "connector_label": [closest[0], secondclosest[0]]}
+
+        return {"intent": closest[0], "connector_label": closest[0]}
+    else:
+        return None
 
 # from sentence_transformers import SentenceTransformer, SimilarityFunction
 # sentences1 = ["Draagt de persoon een corrigerend ding gezichts?"]
