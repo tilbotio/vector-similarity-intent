@@ -1,31 +1,37 @@
+import multiprocessing
 import os
 
-from fastapi import FastAPI, Query
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, SimilarityFunction
-from typing import Annotated
-from urllib.parse import unquote
+from uvicorn import run
 
-modelname = 'NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers'
+load_dotenv()
 
-if 'MODELNAME' in os.environ:
-    modelname = os.environ['MODELNAME']
+PORT = os.getenv("PORT", 8081)
+MODELNAME = os.getenv("MODELNAME", "NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers")
 
-model = SentenceTransformer(modelname,
+model = SentenceTransformer(MODELNAME,
                             similarity_fn_name=SimilarityFunction.COSINE)
 
 app = FastAPI()
 
 
-@app.get("/")
-async def get_intent(user_input: str, intent_options: Annotated[list[str] | None, Query()] = None):
-    sentences1 = [unquote(user_input)]
+class IntentRequest(BaseModel):
+    user_input: str = ""
+    intent_options: list[str] = []
 
-    intent_options_decoded = []
-    for io in intent_options:
-        if unquote(io) != "candidates":
-            intent_options_decoded.append(unquote(io))
 
-    sentences2 = intent_options_decoded
+@app.get("/healthcheck")
+async def healthcheck():
+    return {"status": "ok"}
+
+@app.post("/")
+async def get_intent(request: IntentRequest):
+    sentences1 = [request.user_input]
+
+    sentences2 = [option for option in request.intent_options if option != "candidates"]
 
     embeddings1 = model.encode(sentences1)
     embeddings2 = model.encode(sentences2)
@@ -56,20 +62,6 @@ async def get_intent(user_input: str, intent_options: Annotated[list[str] | None
     else:
         return None
 
-# from sentence_transformers import SentenceTransformer, SimilarityFunction
-# sentences1 = ["Draagt de persoon een corrigerend ding gezichts?"]
-# sentences2 = ["bril", "ogen", "haar", "leeftijd"]
-
-# # model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2',
-# #                             similarity_fn_name=SimilarityFunction.DOT_PRODUCT)
-# model = SentenceTransformer('NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers',
-#                             similarity_fn_name=SimilarityFunction.COSINE)
-# embeddings1 = model.encode(sentences1)
-# embeddings2 = model.encode(sentences2)
-
-# similarities = model.similarity(embeddings1, embeddings2)
-
-# for idx_i, sentence1 in enumerate(sentences1):
-#     print(sentence1)
-#     for idx_j, sentence2 in enumerate(sentences2):
-#         print(f" - {sentence2: <30}: {similarities[idx_i][idx_j]:.4f}")
+if __name__ == "__main__":
+    multiprocessing.freeze_support()  # For Windows support
+    run(app, host="0.0.0.0", port=PORT, reload=False, workers=1)
