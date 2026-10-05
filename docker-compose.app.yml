@@ -7,9 +7,9 @@ services:
         PORT: ${PORT}      
     restart: unless-stopped
     environment:
-      MODELNAME: "NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers"
-      PORT: 8081
+      MODELNAME: ${MODELNAME}
+      PORT: ${PORT}
     ports:
-      - 8081:8081
+      - ${PORT}:${PORT}
     volumes:
       - .:/app

@@ -1,9 +1,9 @@
+import json
 import multiprocessing
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, File, Form, UploadFile
 from sentence_transformers import SentenceTransformer, SimilarityFunction
 from uvicorn import run
 
@@ -17,21 +17,21 @@ model = SentenceTransformer(MODELNAME,
 
 app = FastAPI()
 
-
-class IntentRequest(BaseModel):
-    user_input: str = ""
-    intent_options: list[str] = []
-
-
 @app.get("/healthcheck")
 async def healthcheck():
     return {"status": "ok"}
 
 @app.post("/")
-async def get_intent(request: IntentRequest):
-    sentences1 = [request.user_input]
+async def get_intent(image: UploadFile = File(None),
+    user_input: str = Form(""),
+    prompt: str | None = Form(None),
+    intent_options: str | None = Form(None),
+    key_user_account: str | None = Form(None),
+):
+    sentences1 = [user_input]
+    intent_options_parsed = json.loads(intent_options) if intent_options else []
 
-    sentences2 = [option for option in request.intent_options if option != "candidates"]
+    sentences2 = [option for option in intent_options_parsed if option != "candidates"]
 
     embeddings1 = model.encode(sentences1)
     embeddings2 = model.encode(sentences2)
