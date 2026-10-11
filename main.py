@@ -27,6 +27,7 @@ async def get_intent(image: UploadFile = File(None),
     prompt: str | None = Form(None),
     intent_options: str | None = Form(None),
     key_user_account: str | None = Form(None),
+    allow_candidates: bool = Form(False)
 ):
     sentences1 = [user_input]
     intent_options_parsed = json.loads(intent_options) if intent_options else []
@@ -53,10 +54,11 @@ async def get_intent(image: UploadFile = File(None),
             thirdclosest = [sentence2, similarities[0][idx]]
 
     if closest[1] > 0.4:
-        if closest[1] - secondclosest[1] < 0.05:
-            if secondclosest[1] - thirdclosest[1] < 0.05:
-                return {"intent": "candidates", "connector_label": [closest[0], secondclosest[0], thirdclosest[0]]}
-            return {"intent": "candidates", "connector_label": [closest[0], secondclosest[0]]}
+        if allow_candidates:
+            if closest[1] - secondclosest[1] < 0.05:
+                if secondclosest[1] - thirdclosest[1] < 0.05:
+                    return {"intent": "candidates", "connector_label": [closest[0], secondclosest[0], thirdclosest[0]]}
+                return {"intent": "candidates", "connector_label": [closest[0], secondclosest[0]]}
 
         return {"intent": closest[0], "connector_label": closest[0]}
     else:
