@@ -23,12 +23,5 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy the application source
 COPY . .
 
-# # Default environment values (can be overridden by docker-compose or .env)
-# ENV APP_HOST=0.0.0.0 \
-#     APP_PORT=8081
-
-# # Expose the application port (informational)
-# EXPOSE 8081
-
 # Start the app. We use python app.py so it respects APP_HOST/APP_PORT and .env
 CMD fastapi run --port ${PORT}

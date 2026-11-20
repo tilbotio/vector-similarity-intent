@@ -1,28 +1,5 @@
 name: tilbot
 services:
-  yarn-install:
-    extends:
-      file: ../../docker-compose.yml
-      service: yarn-install
-
-  frontend:
-    extends:
-      file: ../../docker-compose.yml
-      service: frontend
-
-  backend:
-    extends:
-      file: ../../docker-compose.yml
-      service: backend
-    networks:
-      tbnetwork:
-      default:
-
-  mongo:
-    extends:
-      file: ../../docker-compose.yml
-      service: mongo
-
   vector-similarity-intent:
     build:
       context: .
@@ -30,20 +7,13 @@ services:
         PORT: ${PORT}
     restart: unless-stopped
     environment:
-      MODELNAME: "NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers"
-      PORT: 8081
+      MODELNAME: ${MODELNAME}
+      PORT: ${PORT}
     networks:
-      tbnetwork:
-    volumes:
-      - .:/app
+      tbpluginnetwork:
 
 networks:
-  tbnetwork:
+  tbpluginnetwork:
     driver: bridge
     ipam:
-      config:
-        - subnet: 172.99.0.0/16
       driver: default
-
-volumes:
-  mongodb:
