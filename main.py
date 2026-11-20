@@ -1,6 +1,18 @@
 import json
 import multiprocessing
 import os
+import sys
+
+if __name__ == "__main__":
+    multiprocessing.freeze_support()  # For Windows support
+    if sys.platform == 'darwin':
+        try:
+            multiprocessing.set_start_method('fork', force=True)
+        except RuntimeError:
+            pass
+
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, UploadFile
@@ -65,5 +77,4 @@ async def get_intent(image: UploadFile = File(None),
         return None
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()  # For Windows support
     run(app, host="0.0.0.0", port=PORT, reload=False, workers=1)
